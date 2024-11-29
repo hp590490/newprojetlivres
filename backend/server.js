@@ -1,12 +1,29 @@
-const express = require("express");
-const port = 3000;
+const express = require('express');
+const mongoose = require('mongoose');
+const bookRoutes = require('./routes/books.routes'); // Importer les routes
 
 const app = express();
 
-//Middleware qui permet de traiter les données de la request
+// Middleware pour parser les requêtes JSON
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
 
-app.use("/api/books", require("./routes/books.routes"));
-//Lancer le serveur
-app.listen(port, () => console.log("Le port du serveur est le port " + port));
+// Connexion à la base de données MongoDB
+mongoose
+  .connect(
+    'mongodb+srv://ZerkaTritek:HP123456@cluster0.teep7.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0',
+    {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    }
+  )
+  .then(() => console.log('Connexion à MongoDB réussie'))
+  .catch((err) => console.log('Erreur de connexion à MongoDB:', err));
+
+// Utilisation des routes définies dans book.routes.js
+app.use('/api/books', bookRoutes);
+
+// Démarrage du serveur
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Serveur démarré sur le port ${PORT}`);
+});
