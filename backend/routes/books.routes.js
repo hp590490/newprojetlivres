@@ -1,17 +1,21 @@
-const express = require("express");
-const { setBooks, getBooks } = require("../controllers/book.controller");
+const express = require('express');
+const auth = require('../middleware/auth');
+const upload = require('../middleware/multer');
+
+const {
+  setBook,
+  getBooks,
+  editBook,
+  getBook,
+  deleteBook,
+} = require('../controllers/book.controller');
 const router = express.Router();
 
-router.get("/", getBooks);
+router.get('/api/books', getBooks);
+router.get('/api/books/:id', getBook);
+router.post('/api/books', auth, upload.single('image'), setBook);
 
-router.post("/", setBooks);
-
-router.put("/:id", (req, res) => {
-  res.json({ messageId: req.params.id });
-});
-
-router.delete("/:id", (req, res) => {
-  res.json({ message: "Livre supprimé id : " + req.params.id });
-});
+router.put('/api/books/:id', auth, editBook);
+router.delete('/:id', deleteBook);
 
 module.exports = router;
