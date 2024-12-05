@@ -4,7 +4,7 @@ const path = require('path');
 // Configuration de stockage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '../uploads')); // Chemin absolu
+    cb(null, path.join(__dirname, '../uploads'));
   },
   filename: (req, file, cb) => {
     cb(null, `${Date.now()}-${file.originalname}`);
@@ -14,7 +14,7 @@ const storage = multer.diskStorage({
 // Middleware Multer avec un filtre pour les types d'image
 const upload = multer({
   storage,
-  limits: { fileSize: 2 * 1024 * 1024 }, // Taille max de 5 MB
+  limits: { fileSize: 5 * 1024 * 1024 }, // Taille max de 5 MB
   fileFilter: (req, file, cb) => {
     const filetypes = /jpeg|jpg|png|gif/;
     const mimetype = filetypes.test(file.mimetype);
@@ -29,5 +29,4 @@ const upload = multer({
   },
 });
 
-// Exporte le middleware configuré
 module.exports = upload;
