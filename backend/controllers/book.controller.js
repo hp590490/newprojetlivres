@@ -1,7 +1,5 @@
 const BookModel = require('../models/books.model');
 const mongoose = require('mongoose');
-const upload = require('../middleware/multer');
-const booksModel = require('../models/books.model');
 
 module.exports.getBooks = async (req, res) => {
   try {
@@ -26,8 +24,10 @@ module.exports.getBook = async (req, res) => {
     if (!book) {
       return res.status(404).json({ message: 'Livre non trouvé.' });
     }
-
-    res.status(200).json(book);
+    res.status(200).json({
+      ...book.toObject(),
+      imageUrl: book.originalImageUrl || book.imageUrl, // Priorité à l'image originale
+    });
   } catch (error) {
     console.error('Erreur lors de la récupération du livre :', error.message);
     res.status(500).json({ message: 'Erreur serveur.' });
@@ -36,12 +36,11 @@ module.exports.getBook = async (req, res) => {
 
 module.exports.getBestsBooks = async (req, res) => {
   try {
-    // Récupérer les 3 meilleurs livres selon leur averageRating
+    // récupère les 3 meilleurs livres selon leur averageRating
     const bestBooks = await BookModel.find()
       .sort({ averageRating: -1 }) // Trier par averageRating décroissant
       .limit(3); // Limiter à 3 résultats
 
-    // Retourner les livres
     res.status(200).json(bestBooks);
   } catch (error) {
     res.status(500).json({
@@ -54,26 +53,29 @@ module.exports.setBook = async (req, res) => {
     // Extraire les données JSON du champ 'book' et les parser
     const bookData = JSON.parse(req.body.book);
 
-    // Récupérer les données du fichier image (si existant)
-    let imageUrl = '';
+    // Récupérer les données du fichier image
     if (req.file) {
-      imageUrl = `${req.protocol}://${req.get('host')}/uploads/${
+      // Chemin de l'image originale
+      const originalImageUrl = `${req.protocol}://${req.get('host')}/uploads/${
         req.file.filename
       }`;
+      // Chemin de l'image redimensionnée
+      const resizedImageUrl = `${req.protocol}://${req.get(
+        'host'
+      )}/uploads/resized_${req.file.filename}`;
+
+      // Ajouter les URLs dans les données du livre
+      bookData.imageUrl = resizedImageUrl;
+      bookData.originalImageUrl = originalImageUrl; // Nouveau champ pour l'image originale
     }
 
-    // Ajouter l'URL de l'image aux données du livre
-    bookData.imageUrl = imageUrl;
-
-    // Création du nouveau livre dans la base de données
+    // Créer et sauvegarder le nouveau livre
     const newBook = new BookModel(bookData);
-
-    // Sauvegarde dans la base de données
     await newBook.save();
 
     res.status(201).json({
       message: 'Livre ajouté avec succès !',
-      imageUrl,
+      book: newBook,
     });
   } catch (error) {
     console.error('Erreur lors de l’ajout du livre :', error.message);
@@ -105,61 +107,55 @@ module.exports.deleteBook = async (req, res) => {
 
 module.exports.ratingBook = async (req, res) => {
   try {
-    // Récupérer les données de la requête (userId et rating)
+    // récupérer les données de la requête (userId et rating)
     const { userId, rating } = req.body;
 
-    // Vérifier que la note est comprise entre 0 et 5
+    // vérifier que la note est comprise entre 0 et 5
     if (rating < 0 || rating > 5) {
       return res
         .status(400)
         .json({ message: 'La note doit être comprise entre 0 et 5.' });
     }
 
-    // Vérifier que le userId est valide
+    // vérifier que le userId est valide
     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({ message: 'userId invalide.' });
     }
 
-    // Récupérer le livre par son ID
+    // récupérer le livre par son ID
     const book = await BookModel.findById(req.params.id);
     if (!book) {
       return res.status(404).json({ message: 'Livre non trouvé.' });
     }
 
-    // Debug : Vérification de la structure des ratings
-    console.log('Ratings du livre :', book.ratings);
-
-    // Vérifier si l'utilisateur a déjà noté ce livre
+    // vérifier si l'utilisateur a déjà noté ce livre
     const existingRating = book.ratings.find((rating) => {
       console.log('Vérification rating.userId :', rating.userId);
       return rating.userId && rating.userId.toString() === userId.toString();
     });
 
     if (existingRating) {
-      // Si la note existe déjà, on ne permet pas de la modifier
       return res.status(403).json({ message: 'Vous avez déjà noté ce livre.' });
     }
 
-    // Ajouter la note dans le tableau ratings
+    // ajouter la note dans le tableau ratings
     book.ratings.push({
-      userId: new mongoose.Types.ObjectId(userId),
+      userId: userId,
       grade: rating,
     });
 
-    // Calcul de la nouvelle moyenne
+    // calcul de la nouvelle moyenne
     const totalRatings = book.ratings.reduce(
-      (sum, rating) => sum + rating.grade,
+      (acc, rating) => acc + rating.grade, // on parcoure l'élément rating, et au fur et à mesure c'est socké dans "acc" (accumulateur), 0 c'est la valeur initiale de "acc"
       0
     );
-    const averageRating = (totalRatings / book.ratings.length).toFixed(1);
+    const averageRating = (totalRatings / book.ratings.length).toFixed(1); // limite à un chiffre après la virgule
 
-    // Mettre à jour la moyenne du livre
+    // mettre à jour la moyenne du livre
     book.averageRating = averageRating;
 
-    // Sauvegarder les modifications dans la base de données
     await book.save();
 
-    // Répondre avec le livre mis à jour
     return res.status(200).json(book);
   } catch (error) {
     console.error('Erreur lors de la mise à jour des ratings :', error.message);
