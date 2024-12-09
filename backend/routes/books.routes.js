@@ -1,6 +1,6 @@
 const express = require('express');
 const auth = require('../middleware/auth');
-const upload = require('../middleware/multer');
+const { upload, resizeImage } = require('../middleware/multer');
 
 const {
   setBook,
@@ -17,7 +17,7 @@ router.get('/api/books', getBooks);
 router.get('/api/books/bestrating', getBestsBooks);
 router.get('/api/books/:id', getBook);
 
-router.post('/api/books', upload.single('image'), setBook);
+router.post('/api/books', upload.single('image'), resizeImage, setBook);
 
 router.post('/api/books/:id/rating', auth, ratingBook);
 

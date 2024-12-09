@@ -4,10 +4,10 @@ const bookRoutes = require('./routes/books.routes');
 const userRoutes = require('./routes/user');
 const app = express();
 const path = require('path');
-
+const cors = require('cors');
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
+app.use(cors({ origin: 'http://localhost:3000' }));
 // Connexion à la base de données MongoDB
 mongoose
   .connect(
@@ -20,7 +20,7 @@ mongoose
 app.use('/', bookRoutes);
 app.use('/api/auth', userRoutes);
 // Démarrage du serveur
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`Serveur démarré sur le port ${PORT}`);
 });
