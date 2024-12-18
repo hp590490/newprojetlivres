@@ -17,12 +17,12 @@ router.get('/api/books', getBooks);
 router.get('/api/books/bestrating', getBestsBooks);
 router.get('/api/books/:id', getBook);
 
-router.post('/api/books', upload.single('image'), resizeImage, setBook);
+router.post('/api/books', upload.single('image'), resizeImage, auth, setBook);
 
 router.post('/api/books/:id/rating', auth, ratingBook);
 
 router.put('/api/books/:id', auth, editBook);
 
-router.delete('/api/books/:id', deleteBook);
+router.delete('/api/books/:id', auth, deleteBook);
 
 module.exports = router;

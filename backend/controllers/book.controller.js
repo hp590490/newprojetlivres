@@ -26,7 +26,7 @@ module.exports.getBook = async (req, res) => {
     }
     res.status(200).json({
       ...book.toObject(),
-      imageUrl: book.originalImageUrl || book.imageUrl, // Priorité à l'image originale
+      imageUrl: book.originalImageUrl || book.imageUrl, // priorité à l'image originale
     });
   } catch (error) {
     console.error('Erreur lors de la récupération du livre :', error.message);
@@ -43,33 +43,45 @@ module.exports.getBestsBooks = async (req, res) => {
 
     res.status(200).json(bestBooks);
   } catch (error) {
-    res.status(500).json({
+    res.status(400).json({
       message: 'Erreur lors de la récupération des meilleurs livres.',
     });
   }
 };
 module.exports.setBook = async (req, res) => {
   try {
-    // Extraire les données JSON du champ 'book' et les parser
+    // extraire les données JSON du champ 'book' et les parser
     const bookData = JSON.parse(req.body.book);
 
-    // Récupérer les données du fichier image
-    if (req.file) {
-      // Chemin de l'image originale
-      const originalImageUrl = `${req.protocol}://${req.get('host')}/uploads/${
-        req.file.filename
-      }`;
-      // Chemin de l'image redimensionnée
-      const resizedImageUrl = `${req.protocol}://${req.get(
-        'host'
-      )}/uploads/resized_${req.file.filename}`;
+    // vérification des champs du formulaire
+    const requiredFields = ['title', 'author', 'year', 'genre'];
+    const missingFields = requiredFields.filter((field) => !bookData[field]); // on vérifie pour les champs s'il y en a un manquant, si oui il est ajouté à missingFields et donc un message d'erreur est renvoyé
 
-      // Ajouter les URLs dans les données du livre
-      bookData.imageUrl = resizedImageUrl;
-      bookData.originalImageUrl = originalImageUrl; // Nouveau champ pour l'image originale
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        message: `Les champs suivants sont obligatoires : ${missingFields.join(
+          ', '
+        )}.`,
+      });
     }
 
-    // Créer et sauvegarder le nouveau livre
+    // vérification de l'image uploadée
+    if (!req.file) {
+      return res.status(400).json({
+        message: 'Une image est obligatoire.',
+      });
+    }
+
+    const originalImageUrl = `${req.protocol}://${req.get('host')}/uploads/${
+      req.file.filename
+    }`;
+    const resizedImageUrl = `${req.protocol}://${req.get(
+      'host'
+    )}/uploads/resized_${req.file.filename}`;
+
+    bookData.imageUrl = resizedImageUrl;
+    bookData.originalImageUrl = originalImageUrl;
+
     const newBook = new BookModel(bookData);
     await newBook.save();
 
@@ -79,9 +91,10 @@ module.exports.setBook = async (req, res) => {
     });
   } catch (error) {
     console.error('Erreur lors de l’ajout du livre :', error.message);
-    res
-      .status(400)
-      .json({ message: 'Erreur lors de l’ajout du livre.', error });
+    res.status(400).json({
+      message: 'Erreur lors de l’ajout du livre.',
+      error: error.message,
+    });
   }
 };
 module.exports.editBook = async (req, res) => {
@@ -93,7 +106,9 @@ module.exports.editBook = async (req, res) => {
   const updateBook = await BookModel.findByIdAndUpdate(book, req.body, {
     new: true,
   });
-  res.status(200).json({ updateBook });
+  res
+    .status(200)
+    .json({ message: 'Le livre ' + updateBook + ' a bien été modifié' });
 };
 
 module.exports.deleteBook = async (req, res) => {
