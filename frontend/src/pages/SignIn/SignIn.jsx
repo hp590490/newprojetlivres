@@ -18,7 +18,10 @@ function SignIn({ setUser }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [notification, setNotification] = useState({ error: false, message: '' });
+  const [notification, setNotification] = useState({
+    error: false,
+    message: '',
+  });
   const signIn = async () => {
     try {
       setIsLoading(true);
@@ -40,7 +43,10 @@ function SignIn({ setUser }) {
       }
     } catch (err) {
       console.log(err);
-      setNotification({ error: true, message: err.message });
+      setNotification({
+        error: true,
+        message: 'Paire identifiant/mot de passe incorrecte',
+      });
       console.log('Some error occured during signing in: ', err);
     } finally {
       setIsLoading(false);
@@ -62,7 +68,10 @@ function SignIn({ setUser }) {
         console.log('Something went wrong during signing up: ', response);
         return;
       }
-      setNotification({ error: false, message: 'Votre compte a bien été créé, vous pouvez vous connecter' });
+      setNotification({
+        error: false,
+        message: 'Votre compte a bien été créé, vous pouvez vous connecter',
+      });
     } catch (err) {
       setNotification({ error: true, message: err.message });
       console.log('Some error occured during signing up: ', err);
@@ -86,7 +95,9 @@ function SignIn({ setUser }) {
             name="email"
             id="email"
             value={email}
-            onChange={(e) => { setEmail(e.target.value); }}
+            onChange={(e) => {
+              setEmail(e.target.value);
+            }}
           />
         </label>
         <label htmlFor="password">
@@ -97,7 +108,9 @@ function SignIn({ setUser }) {
             name="password"
             id="password"
             value={password}
-            onChange={(e) => { setPassword(e.target.value); }}
+            onChange={(e) => {
+              setPassword(e.target.value);
+            }}
           />
         </label>
         <div className={styles.Submit}>
@@ -110,9 +123,7 @@ function SignIn({ setUser }) {
             onClick={signIn}
           >
             {isLoading ? <div className="" /> : null}
-            <span>
-              Se connecter
-            </span>
+            <span>Se connecter</span>
           </button>
           <span>OU</span>
           <button
@@ -123,16 +134,12 @@ function SignIn({ setUser }) {
             bg-gray-800  text-white hover:bg-gray-800"
             onClick={signUp}
           >
-            {
-                isLoading
-                  ? <div className="mr-2 w-5 h-5 border-l-2 rounded-full animate-spin" /> : null
-              }
-            <span>
-              {'S\'inscrire'}
-            </span>
+            {isLoading ? (
+              <div className="mr-2 w-5 h-5 border-l-2 rounded-full animate-spin" />
+            ) : null}
+            <span>S&apos;inscrire</span>
           </button>
         </div>
-
       </div>
     </div>
   );

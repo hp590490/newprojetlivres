@@ -1,7 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-const User = require('../models/user');
+const User = require('../models/user.model');
 
 exports.signup = (req, res, next) => {
   bcrypt
@@ -36,9 +36,13 @@ exports.login = (req, res, next) => {
             } else {
               res.status(200).json({
                 userId: user._id,
-                token: jwt.sign({ userId: user._id }, 'RANDOM_TOKEN_SECRET', {
-                  expiresIn: '96h',
-                }),
+                token: jwt.sign(
+                  { userId: user._id },
+                  process.env.RANDOM_KEY_SECRET,
+                  {
+                    expiresIn: '96h',
+                  }
+                ),
               });
             }
           })
